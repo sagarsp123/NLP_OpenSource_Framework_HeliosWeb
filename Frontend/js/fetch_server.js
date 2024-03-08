@@ -5,12 +5,12 @@ function analyzeSentiment() {
     const text = textInput.value;
 
     // Define the JSON data to send in the request body
-    const data = {
-        text: text
+    data = {
+        text: "I'm sad with the service. It's very bad."
     };
 
     // Define the URL of your Flask server route
-    const url = 'http://127.0.0.1:5000/nlp_nltk_sentiment';
+    url = 'https://zany-cod-7jxw4pvvp3wxjg-5000.app.github.dev/nlp_nltk_sentiment';
 
     // Make a POST request to the Flask server
     fetch(url, {
