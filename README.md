@@ -14,7 +14,7 @@ c) Fine-tuning model, used different Sentiment Analysis model and techniques lik
 3. Integration of Frontend with Backend server and testing API calls for efficiency, time consumption and scalability.
 
 ## Tech Stack/ Methodologies:
-Python
-Data Extraction and Cleaning
-NLP, LLM, CNN, Sentiment Analysis packages
-HTML, CSS, Javascript, D3. JS
+1.Python
+2.Data Extraction and Cleaning
+3.NLP, LLM, CNN, Sentiment Analysis packages
+4.HTML, CSS, Javascript, D3. JS
