@@ -12,30 +12,47 @@
             <input type="file" id="upload-btn" accept="image/*">
             <input type="text" id="text-input" placeholder="Enter text...">
             <button id="plus-btn">+</button>
+            
         </div>
-        <div class="content">
+        <div class="content" id="content">
+            <!-- Initially, one row with empty value -->
             <div class="row">
-                <input type="text" class="readonly-text" readonly value="Sample text">
-                <div class="score-box">100</div>
-            </div>
-            <!-- Add more rows as needed -->
-            <div class="row">
-                <input type="text" class="readonly-text" readonly value="Sample text">
-                <div class="score-box">100</div>
-            </div>
-            <div class="row">
-                <input type="text" class="readonly-text" readonly value="Sample text">
-                <div class="score-box">100</div>
-            </div>
-            <div class="row">
-                <input type="text" class="readonly-text" readonly value="Sample text">
-                <div class="score-box">100</div>
-            </div>
-            <div class="row">
-                <input type="text" class="readonly-text" readonly value="Sample text">
-                <div class="score-box">100</div>
+                <input type="text" class="readonly-text" readonly value="">
+                <div class="score-box">NaN</div>
             </div>
         </div>
+        <button id="submit-btn">Submit</button> <!-- Add the Submit button -->
     </div>
+
+    <script src="../js/fetch_server.js"></script>
+
+    <script>
+        document.getElementById('plus-btn').addEventListener('click', function() {
+            var inputValue = document.getElementById('text-input').value.trim();
+            if (inputValue !== "") {
+                var rows = document.querySelectorAll('.row');
+                var lastRow = rows[rows.length - 1];
+                var input = lastRow.querySelector('.readonly-text');
+                input.value = inputValue;
+                var content = document.getElementById('content');
+                var newRow = document.createElement('div');
+                newRow.classList.add('row');
+                newRow.innerHTML = `
+                    <input type="text" class="readonly-text" readonly value="">
+                    <div class="score-box">100</div>
+                `;
+                content.appendChild(newRow);
+            }
+        });
+
+        // document.getElementById('submit-btn').addEventListener('click', function() {
+        //     var rows = document.querySelectorAll('.row');
+        //     rows.forEach(function(row) {
+        //         var input = row.querySelector('.readonly-text');
+        //         var inputValue = input.value.trim();
+        //         console.log(inputValue); // You can do something with the submitted values here
+        //     });
+        // });
+    </script>
 </body>
 </html>
