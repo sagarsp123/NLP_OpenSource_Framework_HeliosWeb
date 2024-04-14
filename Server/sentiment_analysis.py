@@ -8,18 +8,21 @@ from textblob import TextBlob
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer as VSAnalyzer
 import os
 import torch
-from transformers import BertTokenizer, BertForSequenceClassification, DistilBertTokenizer, DistilBertForSequenceClassification, pipeline
-from transformers import XLNetTokenizer, XLNetForSequenceClassification
+# from transformers import BertTokenizer, BertForSequenceClassification, DistilBertTokenizer, DistilBertForSequenceClassification, pipeline
+# from transformers import XLNetTokenizer, XLNetForSequenceClassification
+
+# # import tensorflow as tf
+# # from tensorflow.keras.preprocessing.text import Tokenizer
+# # from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 # import tensorflow as tf
-# from tensorflow.keras.preprocessing.text import Tokenizer
-# from tensorflow.keras.preprocessing.sequence import pad_sequences
+# import tensorflow_hub as hub
 
-import tensorflow as tf
-import tensorflow_hub as hub
+from flask_cors import CORS  # Import CORS class
 
 
 app = Flask(__name__)
+CORS(app)  # Apply CORS to your Flask app
 
 # # Set the NLTK data path explicitly
 # nltk_data_path = 'C:\\Users\\Admin/nltk_data'
@@ -36,17 +39,17 @@ class SentimentAnalyzer:
     def __init__(self):
         self.sia = SentimentIntensityAnalyzer()
         self.vader_analyzer = VSAnalyzer()
-        self.tokenizer_bert = DistilBertTokenizer.from_pretrained('distilbert-base-uncased-finetuned-sst-2-english')
-        self.model_bert = DistilBertForSequenceClassification.from_pretrained('distilbert-base-uncased-finetuned-sst-2-english')
-        self.model_bert.eval()
+        # self.tokenizer_bert = DistilBertTokenizer.from_pretrained('distilbert-base-uncased-finetuned-sst-2-english')
+        # self.model_bert = DistilBertForSequenceClassification.from_pretrained('distilbert-base-uncased-finetuned-sst-2-english')
+        # self.model_bert.eval()
 
-        # Load pre-trained model from TensorFlow Hub
-        self.model_lstm = hub.load("https://tfhub.dev/google/nnlm-en-dim128/2")
+        # # Load pre-trained model from TensorFlow Hub
+        # self.model_lstm = hub.load("https://tfhub.dev/google/nnlm-en-dim128/2")
 
-        # Initialize XLNet tokenizer and model
-        self.tokenizer_xlnet = XLNetTokenizer.from_pretrained('xlnet-base-cased')
-        self.model_xlnet = XLNetForSequenceClassification.from_pretrained('xlnet-base-cased')
-        self.model_xlnet.eval()
+        # # Initialize XLNet tokenizer and model
+        # self.tokenizer_xlnet = XLNetTokenizer.from_pretrained('xlnet-base-cased')
+        # self.model_xlnet = XLNetForSequenceClassification.from_pretrained('xlnet-base-cased')
+        # self.model_xlnet.eval()
 
 
     def nlp_nltk_sentiment(self, text):
@@ -91,57 +94,57 @@ class SentimentAnalyzer:
         vader_scores = self.vader_analyzer.polarity_scores(text)
         return {'neg': vader_scores['neg'], 'pos': vader_scores['pos'], 'neu': vader_scores['neu']}
 
-    def bert_sentiment(self, text):
-        inputs = self.tokenizer_bert(text, return_tensors='pt', padding=True, truncation=True)
-        with torch.no_grad():
-            outputs = self.model_bert(**inputs)
-            logits = outputs.logits
-            probabilities = torch.softmax(logits, dim=1).tolist()[0]
-        return {'neg': probabilities[0], 'pos': probabilities[1]}
-        # print("Probabilities:", probabilities)  # Add print statement for debugging
-        # return probabilities
+    # def bert_sentiment(self, text):
+    #     inputs = self.tokenizer_bert(text, return_tensors='pt', padding=True, truncation=True)
+    #     with torch.no_grad():
+    #         outputs = self.model_bert(**inputs)
+    #         logits = outputs.logits
+    #         probabilities = torch.softmax(logits, dim=1).tolist()[0]
+    #     return {'neg': probabilities[0], 'pos': probabilities[1]}
+    #     # print("Probabilities:", probabilities)  # Add print statement for debugging
+    #     # return probabilities
 
-    def lstm_sentiment(self, text):
-        embeddings = self.model_lstm([text]).numpy()
-        # Assuming a simple polarity classification based on embeddings
-        polarity_score = embeddings[0][0]
-        # Convert float32 to Python float for JSON serialization
-        polarity_score = float(polarity_score)
-        return {'neg': 1.0 - polarity_score, 'pos': polarity_score, 'neu': 0.0}  # Assuming a binary classification, 'neu' is set to 0
-
-
-    def cnn_sentiment(self, text):
-        # Load pre-trained CNN model for sentiment analysis
-        cnn_model = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
-        result = cnn_model(text)
-        sentiment_scores = {'neg': result[0]['score'], 'pos': 1 - result[0]['score'], 'neu': 0}
-        return sentiment_scores
+    # def lstm_sentiment(self, text):
+    #     embeddings = self.model_lstm([text]).numpy()
+    #     # Assuming a simple polarity classification based on embeddings
+    #     polarity_score = embeddings[0][0]
+    #     # Convert float32 to Python float for JSON serialization
+    #     polarity_score = float(polarity_score)
+    #     return {'neg': 1.0 - polarity_score, 'pos': polarity_score, 'neu': 0.0}  # Assuming a binary classification, 'neu' is set to 0
 
 
-    def xlnet_sentiment(self, text):
-        try:
-            if not text.strip():  # Check if the input text is empty or whitespace
-                return {'neg': 0.0, 'pos': 0.0, 'neu': 1.0}  # Return neutral sentiment scores
+    # def cnn_sentiment(self, text):
+    #     # Load pre-trained CNN model for sentiment analysis
+    #     cnn_model = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
+    #     result = cnn_model(text)
+    #     sentiment_scores = {'neg': result[0]['score'], 'pos': 1 - result[0]['score'], 'neu': 0}
+    #     return sentiment_scores
 
-            # Tokenize input text
-            inputs = self.tokenizer_xlnet(text, return_tensors="pt", padding=True, truncation=True, max_length=256)
 
-            print(inputs)
-            # Perform inference
-            with torch.no_grad():
-                outputs = self.model_xlnet(**inputs)
-                logits = outputs.logits
-                probabilities = torch.softmax(logits, dim=1).tolist()[0]
-            # Return sentiment scores
-            return {'neg': probabilities[0], 'pos': probabilities[1], 'neu': probabilities[2]}
+    # def xlnet_sentiment(self, text):
+    #     try:
+    #         if not text.strip():  # Check if the input text is empty or whitespace
+    #             return {'neg': 0.0, 'pos': 0.0, 'neu': 1.0}  # Return neutral sentiment scores
 
-        except Exception as e:
-            return {'neg': 0.0, 'pos': 0.0, 'neu': 1.0}  # Return neutral sentiment scores in case of error
+    #         # Tokenize input text
+    #         inputs = self.tokenizer_xlnet(text, return_tensors="pt", padding=True, truncation=True, max_length=256)
+
+    #         print(inputs)
+    #         # Perform inference
+    #         with torch.no_grad():
+    #             outputs = self.model_xlnet(**inputs)
+    #             logits = outputs.logits
+    #             probabilities = torch.softmax(logits, dim=1).tolist()[0]
+    #         # Return sentiment scores
+    #         return {'neg': probabilities[0], 'pos': probabilities[1], 'neu': probabilities[2]}
+
+    #     except Exception as e:
+    #         return {'neg': 0.0, 'pos': 0.0, 'neu': 1.0}  # Return neutral sentiment scores in case of error
 
 
 nlp_object = SentimentAnalyzer()
 
-@app.route('/nlp_nltk_sentiment', methods=['POST'])
+@app.route('/nlp_nltk_sentiment_bulk', methods=['POST'])
 def analyze_sentiment_endpoint():
     try:
         if not request.is_json:
@@ -152,8 +155,16 @@ def analyze_sentiment_endpoint():
         results = {}
         for key, sentence in json_data.items():
             scores = nlp_object.nlp_nltk_sentiment(sentence)
-            #print("Scores:", scores)  # Add print statement for debugging
-            results[key] = scores
+            # Take the maximum score and determine its category
+            max_score_key = max(scores, key=scores.get)
+            if max_score_key == 'pos':
+                max_score = scores['pos']
+            elif max_score_key == 'neg':
+                max_score = -scores['neg']
+            else:
+                max_score = 0  # Return 0 for 'neu'
+
+            results[key] = max_score
 
         return jsonify(results)
 
@@ -234,80 +245,80 @@ def vader_sentiments():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/bert_sentiment', methods=['POST'])
-def bert_sentiment_endpoint():
-    try:
-        if not request.is_json:
-            return jsonify({"error": "No JSON data provided"}), 400
+# @app.route('/bert_sentiment', methods=['POST'])
+# def bert_sentiment_endpoint():
+#     try:
+#         if not request.is_json:
+#             return jsonify({"error": "No JSON data provided"}), 400
 
-        json_data = request.get_json()
+#         json_data = request.get_json()
 
-        results = {}
-        for key, sentence in json_data.items():
-            scores = nlp_object.bert_sentiment(sentence)
-            results[int(key)] = scores  # Convert key to integer
+#         results = {}
+#         for key, sentence in json_data.items():
+#             scores = nlp_object.bert_sentiment(sentence)
+#             results[int(key)] = scores  # Convert key to integer
 
-        return jsonify(results)
+#         return jsonify(results)
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route('/lstm_endpoint', methods=['POST'])
-def lstm_sentiment_endpoint():
-    try:
-        if not request.is_json:
-            return jsonify({"error": "No JSON data provided"}), 400
-
-        json_data = request.get_json()
-
-        results = {}
-        for key, sentence in json_data.items():
-            scores = nlp_object.lstm_sentiment(sentence)
-            results[int(key)] = scores
-
-        return jsonify(results)
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/cnn', methods=['POST'])
-def cnn_sentiment_endpoint():
-    try:
-        if not request.is_json:
-            return jsonify({"error": "No JSON data provided"}), 400
+# @app.route('/lstm_endpoint', methods=['POST'])
+# def lstm_sentiment_endpoint():
+#     try:
+#         if not request.is_json:
+#             return jsonify({"error": "No JSON data provided"}), 400
 
-        json_data = request.get_json()
+#         json_data = request.get_json()
 
-        results = {}
-        for key, sentence in json_data.items():
-            scores = nlp_object.cnn_sentiment(sentence)
-            results[int(key)] = scores
+#         results = {}
+#         for key, sentence in json_data.items():
+#             scores = nlp_object.lstm_sentiment(sentence)
+#             results[int(key)] = scores
 
-        return jsonify(results)
+#         return jsonify(results)
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/xlnet_endpoint', methods=['POST'])
-def xlnet_endpoint():
-    try:
-        if not request.is_json:
-            return jsonify({"error": "No JSON data provided"}), 400
+# @app.route('/cnn', methods=['POST'])
+# def cnn_sentiment_endpoint():
+#     try:
+#         if not request.is_json:
+#             return jsonify({"error": "No JSON data provided"}), 400
 
-        json_data = request.get_json()
+#         json_data = request.get_json()
 
-        results = {}
-        for key, sentence in json_data.items():
-            scores = nlp_object.xlnet_sentiment(sentence)
-            results[key] = scores
+#         results = {}
+#         for key, sentence in json_data.items():
+#             scores = nlp_object.cnn_sentiment(sentence)
+#             results[int(key)] = scores
 
-        return jsonify(results)
+#         return jsonify(results)
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
+
+
+# @app.route('/xlnet_endpoint', methods=['POST'])
+# def xlnet_endpoint():
+#     try:
+#         if not request.is_json:
+#             return jsonify({"error": "No JSON data provided"}), 400
+
+#         json_data = request.get_json()
+
+#         results = {}
+#         for key, sentence in json_data.items():
+#             scores = nlp_object.xlnet_sentiment(sentence)
+#             results[key] = scores
+
+#         return jsonify(results)
+
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
 
 
 if __name__ == '__main__':

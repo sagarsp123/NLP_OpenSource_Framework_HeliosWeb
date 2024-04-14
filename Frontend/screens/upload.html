@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <input type="file" id="upload-btn" accept="image/*">
+            <input type="file" id="upload-btn" accept=".csv">
             <input type="text" id="text-input" placeholder="Enter text...">
             <button id="plus-btn">+</button>
             
@@ -18,15 +18,52 @@
             <!-- Initially, one row with empty value -->
             <div class="row">
                 <input type="text" class="readonly-text" readonly value="">
-                <div class="score-box">NaN</div>
+                <div class="score-box"></div>
             </div>
         </div>
         <button id="submit-btn">Submit</button> <!-- Add the Submit button -->
+        <button id="clear-btn">Clear</button> <!-- Add Clear button -->
     </div>
 
     <script src="../js/fetch_server.js"></script>
 
     <script>
+        document.getElementById('clear-btn').addEventListener('click', function() {
+            var content = document.getElementById('content');
+            var rows = document.querySelectorAll('.row');
+            // Remove all rows except the first one
+            for (var i = rows.length - 1; i > 0; i--) {
+                content.removeChild(rows[i]);
+            }
+            // Clear the value of the first input field
+            var firstInput = document.querySelector('.readonly-text');
+            firstInput.value = '';
+        });
+
+
+        document.getElementById('upload-btn').addEventListener('change', function(event) {
+            var file = event.target.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.readAsText(file);
+                reader.onload = function(e) {
+                    var rows = e.target.result.split('\n');
+                    rows.forEach(function(rowValue) {
+                        var rowValues = rowValue.split(',').map(value => value.trim()).filter(Boolean);
+                        var content = document.getElementById('content');
+                        var newRow = document.createElement('div');
+                        newRow.classList.add('row');
+                        newRow.innerHTML = `
+                            <input type="text" class="readonly-text" readonly value="${rowValues.join(',')}">
+                            <div class="score-box"></div>
+                        `;
+                        content.appendChild(newRow);
+                    });
+                }
+            }
+        });
+
+
         document.getElementById('plus-btn').addEventListener('click', function() {
             var inputValue = document.getElementById('text-input').value.trim();
             if (inputValue !== "") {
@@ -45,6 +82,34 @@
             }
         });
 
+        document.getElementById('submit-btn').addEventListener('click', function() {
+            var rows = document.querySelectorAll('.row');
+            rows.forEach(function(row) {
+                var input = row.querySelector('.readonly-text');
+                var inputValue = parseFloat(input.value.trim());
+
+                console.log("Input value:", input.value); // Check the input value in the console
+        
+                var scoreBox = row.querySelector('.score-box');
+                // Set color for text only
+                if (!isNaN(inputValue)) { // Check if inputValue is a valid number
+                if (inputValue < 0) {
+                    scoreBox.style.color = 'red';
+                } else if (inputValue > 0) {
+                    scoreBox.style.color = 'green';
+                } else {
+                    scoreBox.style.color = 'grey';
+                }
+                scoreBox.textContent = inputValue.toFixed(3);
+                } else {
+                    // If the input value is not a valid number, set the score-box color to grey
+                    scoreBox.style.color = 'red';
+                    scoreBox.textContent = 'NaN';
+                }
+                
+            });
+
+        });
         // document.getElementById('submit-btn').addEventListener('click', function() {
         //     var rows = document.querySelectorAll('.row');
         //     rows.forEach(function(row) {
