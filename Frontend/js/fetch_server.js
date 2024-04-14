@@ -1,12 +1,12 @@
-// Function to call the nlp_nltk_sentiment route
-function analyzeSentiment(text, scoreBox) {
+// Function to call the nlp_nltk_sentiment_bulk route
+function analyzeSentimentBulk(texts, scoreBoxes, endpoint) {
     // Define the JSON data to send in the request body
-    const data = {
-        text: text
-    };
+    const data = texts.reduce((acc, text, index) => {
+        acc[index] = text;
+        return acc;
+    }, {});
 
-    // Define the URL of your Flask server route
-    const url = 'http://127.0.0.1:5000/nlp_nltk_sentiment';
+    const url = `http://127.0.0.1:5000/${endpoint}`;
 
     // Make a POST request to the Flask server
     fetch(url, {
@@ -25,11 +25,21 @@ function analyzeSentiment(text, scoreBox) {
     .then(data => {
         // Handle the response data here
         console.log(data);
-        // Extract the score from the response
-        const score = data.text || 0; // Assuming the keys are 'pos' and 'neg'
-        // Update the UI score box with the extracted score
-        scoreBox.textContent = score.toFixed(3); // Display score with 3 decimal places
 
+        // Update the UI score boxes with the extracted scores
+        Object.keys(data).forEach((key, index) => {
+            const scoreBox = scoreBoxes[index];
+            const score = data[key];
+            scoreBox.textContent = score.toFixed(3); // Display score with 3 decimal places
+
+            if (score < 0) {
+                scoreBox.style.color = 'red';
+            } else if (score > 0) {
+                scoreBox.style.color = 'green';
+            } else {
+                scoreBox.style.color = 'grey';
+            }
+        });
     })
     .catch(error => {
         // Handle errors here
@@ -37,28 +47,39 @@ function analyzeSentiment(text, scoreBox) {
     });
 }
 
-const scoreBoxes = [];
-
 // Add event listener to Submit button
 const submitButton = document.getElementById("submit-btn");
 submitButton.addEventListener("click", function() {
-    var rows = document.querySelectorAll('.row');
-    var texts = [];
+    const rows = document.querySelectorAll('.row');
+    const texts = [];
+    const scoreBoxes = [];
+
     rows.forEach(function(row) {
-        var input = row.querySelector('.readonly-text');
-        var inputValue = input.value.trim();
+        const input = row.querySelector('.readonly-text');
+        const inputValue = input.value.trim();
         if (inputValue !== "") {
             texts.push(inputValue);
             // Store the corresponding score-box element
-            var scoreBox = row.querySelector('.score-box');
+            const scoreBox = row.querySelector('.score-box');
             scoreBoxes.push(scoreBox);
         }
     });
 
-    // Call the analyzeSentiment function for each text
-    texts.forEach(function(text, index) {
-        analyzeSentiment(text, scoreBoxes[index]);
+    // Get the endpoint from the Flask server
+    fetch('http://127.0.0.1:5000/sentiment_endpoint')
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Call the analyzeSentimentBulk function with the determined endpoint
+        analyzeSentimentBulk(texts, scoreBoxes, data.endpoint);
+    })
+    .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
     });
-
-    console.log(texts);
+    // Call the analyzeSentimentBulk function with all texts
+    //analyzeSentimentBulk(texts, scoreBoxes, apiUrl);
 });
